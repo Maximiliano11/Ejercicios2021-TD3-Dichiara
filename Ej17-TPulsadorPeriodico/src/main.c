@@ -14,7 +14,7 @@ de 1 segundo y cuyo tiempo de activacion sera el tiempo medido
 #define PROCESADORA 0
 #define PROCESADORB 1
 #define TICKSMAX    (PERIODO)
-#define TW          5       //Cantidad de veces que se va a repetir el bucle antes de cambiar de estado
+#define TW          5       //Cantidad de veces que se va a repetir el bucle antes de cambiar de estado, eliminando la posibilidad de rebote
 
 
 
@@ -159,7 +159,3 @@ void TareaPulsador( void* taskParmPtr )
          }
     }
 }
-
-/*
-Fe de erratas, tuve problemas para implementar el antirebote
-*/
