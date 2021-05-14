@@ -22,18 +22,6 @@ pulsadorInfo pulsadorA;
 
 extern SemaphoreHandle_t semaforo;
 
-/*==================[Implementaciones]=================================*/
-/*TickType_t obtenerDiferencia()
-{
-    TickType_t tiempo;
-    tiempo = pulsadorA.diferenciaTiempo;
-    return tiempo;
-}
-void borrarDiferencia( void )
-{
-    pulsadorA.diferenciaTiempo = TIEMPO_NO_VALIDO;
-}
-*/
 
 void inicializarPulsador( void )
 {
