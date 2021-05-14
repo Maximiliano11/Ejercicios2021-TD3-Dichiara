@@ -14,10 +14,10 @@ destella un led verde, sino uno rojo
 #include "freertos/FreeRTOSConfig.h"
 #include "driver/gpio.h"
 #include "pulsador.h"
-#include "freertos/semphr.h" //librería para el uso de semaforos
+#include "freertos/semphr.h" //Librería para el uso de semaforos
 
-#define SALIDA1     GPIO_NUM_25 //Led 1
-#define SALIDA2     GPIO_NUM_26 //Led 2
+#define SALIDA1     GPIO_NUM_25
+#define SALIDA2     GPIO_NUM_26
 #define T_ESPERA_MS  40
 #define T_ESPERA     pdMS_TO_TICKS(T_ESPERA_MS)
 #define PROCESADORA 0
@@ -25,9 +25,15 @@ destella un led verde, sino uno rojo
 #define LED_ON_MS    500
 #define LED_ON       pdMS_TO_TICKS(LED_ON_MS)
 
-void tareaDestello( void* taskParmPtr ); //Prototipo de la función de la tarea
 
+void tareaDestello( void* taskParmPtr ); //Prototipo de la función de la tarea
+ TickType_t xLastWakeTime = 0;
+TickType_t sinc = pdMS_TO_TICKS(500);
 SemaphoreHandle_t semaforo = NULL; //Puntero al semaforo
+
+//Lineas 30 y 31: Apagado del led verde se sincroniza con el encendido del led rojo
+
+
 
 void app_main()
 {
@@ -44,16 +50,17 @@ void app_main()
     inicializarPulsador();
 
     BaseType_t res = xTaskCreatePinnedToCore(
-    	tareaDestello,                     	// Funcion de la tarea a ejecutar
-        "tareaDestello",   	                // Nombre de la tarea como String amigable para el usuario
-        configMINIMAL_STACK_SIZE, 		// Cantidad de stack de la tarea
-        NULL,                          	// Parametros de tarea
-        tskIDLE_PRIORITY+1,         	// Prioridad de la tarea -> Queremos que este un nivel encima de IDLE
-        NULL,                          		// Puntero a la tarea creada en el sistema
-        PROCESADORA
+    	tareaDestello,              // Funcion de la tarea a ejecutar
+        "tareaDestello",            // Nombre de la tarea como String amigable para el usuario
+        configMINIMAL_STACK_SIZE,   // Cantidad de stack de la tarea
+        NULL,                       // Parametros de tarea
+        tskIDLE_PRIORITY+1,         // Prioridad de la tarea -> Queremos que este un nivel encima de IDLE
+        NULL,                       // Puntero a la tarea creada en el sistema
+        PROCESADORA                 // Procesador a utilizar
     );
 
-    // Gestion de errores
+
+    // Gestion de errores:
 	if(res == pdFAIL)
 	{
 		printf( "Error al crear la tarea.\r\n" );
@@ -61,7 +68,8 @@ void app_main()
 	}
 }
 
-// Implementacion de funcion de la tarea
+
+// Implementacion de funcion de la tarea:
 void tareaDestello( void* taskParmPtr )
 {
     // ---------- Configuraciones ------------------------------
@@ -73,10 +81,20 @@ void tareaDestello( void* taskParmPtr )
     // ---------- Bucle infinito --------------------------
     while( true )
     {
-        xSemaphoreTake( semaforo , portMAX_DELAY);
+        if(xSemaphoreTake( semaforo , LED_ON)==pdTRUE)
+        {
+            vTaskDelayUntil(&xLastWakeTime , sinc); //Se sincroniza la entrada, 500ms luego del flanco descendente 
+            gpio_set_level( SALIDA1, 1 );
+            vTaskDelay( LED_ON );
+            gpio_set_level( SALIDA1, 0 );
+        }
 
-        gpio_set_level( SALIDA1, 1 );
-        vTaskDelay( LED_ON );
-        gpio_set_level( SALIDA1, 0 );
+        else
+        {
+            gpio_set_level( SALIDA2, 1 );
+            vTaskDelay( LED_ON );
+            gpio_set_level( SALIDA2, 0 );
+            xLastWakeTime = xTaskGetTickCount(); //Momento del flanco descendente
+        }
     }
 }
